@@ -1,0 +1,79 @@
+﻿@using VotingApp.Common.Interfaces
+@using VotingApp.Infrastructure.Interfaces.Repositories
+@page "/candidates"
+@inject HttpClient Http
+@inject IBaseRepository<ICandidate> CandidatesRepo
+@inject IBaseRepository<IVoter> VotersRepo
+
+<PageTitle>Candidates</PageTitle>
+
+<h1>Candidates</h1>
+
+<p>Add new candidate</p>
+<label><input @bind="@candidateName" placeholder="Name" /> </label>
+<button class="btn btn-primary" disabled=@isDisabled @onclick="AddCandidate">Add Candidate</button>
+
+@if (isErrorMessage)
+{
+    <p><code>Wrong value</code></p>
+}
+
+@if (candidates == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Votes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var candidate in candidates)
+            {
+                <tr>
+                    <td>@candidate.Name</td>
+                    <td>@GetVotesByCantidate(candidate.Name)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ICandidate> candidates = new List<ICandidate>();
+    private string candidateName = string.Empty;
+    private bool isErrorMessage = false;
+    private bool isDisabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        candidates = CandidatesRepo.GetAll().ToList();
+    }
+
+    private void AddCandidate()
+    {
+        isErrorMessage = false;
+
+        var candidate = CandidatesRepo.GetByName(candidateName);
+
+        isErrorMessage = string.IsNullOrEmpty(candidateName) || candidate != null;
+
+        if (isErrorMessage)
+            return;
+
+        CandidatesRepo.Add(candidateName);
+
+        candidateName = string.Empty;
+        candidates = CandidatesRepo.GetAll().ToList();
+    }
+
+    private string GetVotesByCantidate(string candidateName)
+    {
+        var votes = VotersRepo.GetAll().Where(v => v.CandidateName == candidateName).Count();
+        return votes.ToString();
+    }
+}

@@ -1,0 +1,81 @@
+﻿@using VotingApp.Common.Interfaces
+@using VotingApp.Infrastructure.Interfaces.Repositories
+@page "/voters"
+
+@inject HttpClient Http
+@inject IBaseRepository<IVoter> VotersRepo
+
+<PageTitle>Voters</PageTitle>
+
+<h1>Voters</h1>
+
+<p>Add new volter</p>
+<label><input @bind="@volterName" placeholder="Name" /> </label>
+<button class="btn btn-primary" @onclick="AddVoter">Add Volter</button>
+
+@if (isErrorMessage)
+{
+    <p><code>Wrong value</code></p>
+}
+
+@if (voters == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Has voted</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var voter in voters)
+            {
+                <tr>
+                    <td>@voter.Name</td>
+                    @if (voter.HasVoted)
+                    {
+                        <td>&#10004;</td>
+                    }
+                    else
+                    {
+                        <td>&#10008;</td>
+                    }
+
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<IVoter> voters = new List<IVoter>();
+    private string volterName = string.Empty;
+    private bool isErrorMessage = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        voters = VotersRepo.GetAll().ToList();
+    }
+
+    private void AddVoter()
+    {
+        isErrorMessage = false;
+
+        var voter = VotersRepo.GetByName(volterName);
+
+       isErrorMessage = string.IsNullOrEmpty(volterName) || voter != null;
+            
+        if (isErrorMessage)
+            return;
+
+        VotersRepo.Add(volterName);
+
+        volterName = string.Empty;
+        voters = VotersRepo.GetAll().ToList();
+    }
+}

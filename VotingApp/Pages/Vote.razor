@@ -1,0 +1,90 @@
+﻿@using VotingApp.Common.Interfaces
+@using VotingApp.Infrastructure.Interfaces.Repositories
+@page "/vote"
+@inject IBaseRepository<IVoter> VotersRepo
+@inject IBaseRepository<ICandidate> CandidatesRepo
+
+<PageTitle>Vote</PageTitle>
+
+<h1>Vote</h1>
+
+<br />
+<select class="form-select" @bind="@SelectedVoter" style="width: 300px">
+    <option default>I am</option>
+    <option value="" selected disabled hidden>I am</option>
+    @foreach (var item in Voters)
+    {
+        <option value="@item"> @item </option>
+    }
+</select>
+
+<br />
+<select class="form-select" @bind="@SelectedCandidate" style="width: 300px">
+    <option default>I vote for</option>
+    <option value="" selected disabled hidden>I vote for</option>
+    @foreach (var item in Candidates)
+    {
+        <option value="@item"> @item </option>
+    }
+</select>
+
+<br />
+<button class="btn btn-primary" disabled=@isDisabled @onclick="Submit">Submit!</button>
+
+
+@code {
+    private string selectedVoter = string.Empty;
+    private string selectedCandidate = string.Empty;
+    private bool isDisabled;
+
+    public List<string> Voters
+    {
+        get { return VotersRepo.GetAll().Where(x => !x.HasVoted).Select(x => x.Name).ToList(); }
+    }
+    public List<string> Candidates
+    {
+        get { return CandidatesRepo.GetAll().Select(x => x.Name).ToList(); }
+    }
+    public string SelectedVoter
+    {
+        get { return selectedVoter; }
+        set
+        {
+            selectedVoter = value;
+            SelectItem();
+        }
+    }
+    public string SelectedCandidate
+    {
+        get { return selectedCandidate; }
+        set
+        {
+            selectedCandidate = value;
+            SelectItem();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ClearControls();
+    }
+
+    private void Submit()
+    {
+        var voter = VotersRepo.GetByName(selectedVoter);
+        voter.CandidateName = selectedCandidate;
+
+        ClearControls();
+    }
+
+    private void SelectItem()
+    {
+        isDisabled = selectedVoter == "I am" || selectedCandidate == "I vote for";
+    }
+
+    private void ClearControls()
+    {
+        SelectedVoter = "I am";
+        SelectedCandidate = "I vote for";
+    }
+}
